@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+:root {
+  --bg-base: #f5f1ec;
+  --bg-strong: #1c1815;
+  --text-strong: #211c17;
+  --text-muted: #6d655c;
+  --line-soft: #ddd2c7;
+  --accent: #c49b68;
+  --accent-strong: #b78b58;
+}
+
+/* ─── Keyframe animations ─────────────────────────────────── */
+@keyframes kenBurns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.12) translate(-1%, -0.5%);
+  }
+}
+
+@keyframes slideProgress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ─── Base ────────────────────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: "Cormorant Garamond", "Times New Roman", serif;
+    color: var(--text-strong);
+    background-color: var(--bg-base);
+    background-image:
+      radial-gradient(
+        circle at 10% 10%,
+        rgba(255, 255, 255, 0.68),
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 80% 20%,
+        rgba(205, 177, 145, 0.2),
+        transparent 42%
+      );
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Playfair Display", Georgia, serif;
+    letter-spacing: 0.01em;
+  }
+
+  p,
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  label {
+    font-family: "Manrope", "Segoe UI", sans-serif;
+  }
+
+  /* Smooth image rendering */
+  img {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+}
+
+/* ─── Utilities ───────────────────────────────────────────── */
+@layer utilities {
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .soft-panel {
+    border-radius: 1.25rem;
+    border: 1px solid var(--line-soft);
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 16px 40px rgba(35, 30, 25, 0.08);
+  }
+
+  .text-luxury-muted {
+    color: var(--text-muted);
+  }
+
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(196, 155, 104, 0.26);
+  }
+
+  /* Touch-friendly minimum tap target */
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
