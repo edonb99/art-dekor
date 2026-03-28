@@ -1,5 +1,19 @@
 import { supabase } from './supabase'
 
+/** One retry helps occasional cold starts / transient errors on free-tier Supabase. */
+async function withRetry(fn, attempts = 2) {
+  let last
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (e) {
+      last = e
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 400 * (i + 1)))
+    }
+  }
+  throw last
+}
+
 export const MEDIA_BUCKET = import.meta.env.VITE_SUPABASE_MEDIA_BUCKET || 'media'
 
 export const DEFAULT_SITE_SETTINGS = {
@@ -52,22 +66,24 @@ export async function removeStorageFile(publicUrl) {
  * - Omit category (or pass 'all') to fetch all items (used by slideshow).
  */
 export async function fetchGalleryItems({ category, activeOnly = true } = {}) {
-  let query = supabase
-    .from('gallery_items')
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: false })
+  return withRetry(async () => {
+    let query = supabase
+      .from('gallery_items')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
 
-  if (category && category !== 'all') {
-    query = query.eq('category', category)
-  }
-  if (activeOnly) {
-    query = query.eq('is_active', true)
-  }
+    if (category && category !== 'all') {
+      query = query.eq('category', category)
+    }
+    if (activeOnly) {
+      query = query.eq('is_active', true)
+    }
 
-  const { data, error } = await query
-  if (error) throw error
-  return data || []
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  })
 }
 
 export async function createGalleryItem(payload) {
@@ -107,13 +123,15 @@ export async function deleteGalleryItem(item) {
 }
 
 export async function fetchSiteSettings() {
-  const { data, error } = await supabase
-    .from('site_settings')
-    .select('*')
-    .limit(1)
-    .maybeSingle()
-  if (error) throw error
-  return { ...DEFAULT_SITE_SETTINGS, ...(data || {}) }
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('*')
+      .limit(1)
+      .maybeSingle()
+    if (error) throw error
+    return { ...DEFAULT_SITE_SETTINGS, ...(data || {}) }
+  })
 }
 
 export async function saveSiteSettings(values) {

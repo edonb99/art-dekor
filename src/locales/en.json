@@ -200,7 +200,10 @@
     "noItems": "No photos found.",
     "deleteItem": "Delete",
     "confirmDelete": "Delete this photo?",
-    "noImage": "No image"
+    "noImage": "No image",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "savingOrder": "Saving order…"
   },
   "slideshow": {
     "defaultButton": "Discover",

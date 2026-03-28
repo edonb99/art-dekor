@@ -43,6 +43,9 @@ export default function Admin() {
   const [dragId, setDragId] = useState(null)
   const [dragOverId, setDragOverId] = useState(null)
   const [savingOrder, setSavingOrder] = useState(false)
+  const [desktopDnD, setDesktopDnD] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+  )
 
   // Per-category upload state
   const [uploadStates, setUploadStates] = useState(
@@ -53,6 +56,13 @@ export default function Admin() {
     loadAllItems()
     loadSettings()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const fn = () => setDesktopDnD(mq.matches)
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
   }, [])
 
   async function loadAllItems() {
@@ -175,8 +185,9 @@ export default function Admin() {
   }
 
   async function handleSignOut() {
+    // Navigate off /admin before auth clears, or ProtectedRoute sends users to /login.
+    navigate('/', { replace: true })
     await signOut()
-    navigate('/')
   }
 
   const filteredItems = allItems.filter(
@@ -199,29 +210,14 @@ export default function Admin() {
     setDragOverId(null)
   }
 
-  async function onDrop(e, targetId) {
-    e.preventDefault()
-    setDragOverId(null)
-    if (!dragId || dragId === targetId) { setDragId(null); return }
-
-    const fromIndex = filteredItems.findIndex((i) => i.id === dragId)
-    const toIndex = filteredItems.findIndex((i) => i.id === targetId)
-    if (fromIndex === -1 || toIndex === -1) { setDragId(null); return }
-
-    const reordered = [...filteredItems]
-    const [moved] = reordered.splice(fromIndex, 1)
-    reordered.splice(toIndex, 0, moved)
-
-    // Optimistically update local state
+  async function commitReorder(reordered) {
     const reorderedIds = reordered.map((i) => i.id)
     setAllItems((prev) => {
       const otherItems = prev.filter((i) => !reorderedIds.includes(i.id))
       const withNewOrder = reordered.map((item, idx) => ({ ...item, sort_order: idx }))
       return [...withNewOrder, ...otherItems].sort((a, b) => a.sort_order - b.sort_order)
     })
-    setDragId(null)
 
-    // Persist to database
     setSavingOrder(true)
     try {
       await reorderGalleryItems(reordered)
@@ -231,6 +227,39 @@ export default function Admin() {
     } finally {
       setSavingOrder(false)
     }
+  }
+
+  function moveFilteredItem(index, delta) {
+    const newIndex = index + delta
+    if (newIndex < 0 || newIndex >= filteredItems.length) return
+    const reordered = [...filteredItems]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(newIndex, 0, moved)
+    commitReorder(reordered)
+  }
+
+  async function onDrop(e, targetId) {
+    e.preventDefault()
+    setDragOverId(null)
+    if (!dragId || dragId === targetId) {
+      setDragId(null)
+      return
+    }
+
+    const fromIndex = filteredItems.findIndex((i) => i.id === dragId)
+    const toIndex = filteredItems.findIndex((i) => i.id === targetId)
+    if (fromIndex === -1 || toIndex === -1) {
+      setDragId(null)
+      return
+    }
+
+    const reordered = [...filteredItems]
+    const [moved] = reordered.splice(fromIndex, 1)
+    reordered.splice(toIndex, 0, moved)
+
+    setDragId(null)
+    if (fromIndex === toIndex) return
+    await commitReorder(reordered)
   }
 
   return (
@@ -387,7 +416,7 @@ export default function Admin() {
             </div>
 
             {savingOrder && (
-              <p className="mb-3 text-xs text-[#7b7065] animate-pulse">{t('admin.savingOrder', { defaultValue: 'Saving new order…' })}</p>
+              <p className="mb-3 text-xs text-[#7b7065] animate-pulse">{t('admin.savingOrder')}</p>
             )}
 
             {mediaLoading ? (
@@ -402,15 +431,17 @@ export default function Admin() {
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {filteredItems.map((item) => (
+                {filteredItems.map((item, idx) => (
                   <article
                     key={item.id}
-                    draggable
-                    onDragStart={(e) => onDragStart(e, item.id)}
-                    onDragOver={(e) => onDragOver(e, item.id)}
+                    draggable={desktopDnD}
+                    onDragStart={(e) => desktopDnD && onDragStart(e, item.id)}
+                    onDragOver={(e) => desktopDnD && onDragOver(e, item.id)}
                     onDragEnd={onDragEnd}
-                    onDrop={(e) => onDrop(e, item.id)}
-                    className={`overflow-hidden rounded-2xl border bg-white shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                    onDrop={(e) => desktopDnD && onDrop(e, item.id)}
+                    className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
+                      desktopDnD ? 'cursor-grab active:cursor-grabbing' : ''
+                    } ${
                       dragId === item.id
                         ? 'opacity-40 scale-95 border-[#b68f61]'
                         : dragOverId === item.id
@@ -437,12 +468,41 @@ export default function Admin() {
                       >
                         {t(`admin.cat_${item.category}`)}
                       </span>
-                      {/* Drag handle indicator */}
-                      <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm">
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeWidth={2} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
-                        </svg>
-                      </span>
+                      {/* Drag handle (desktop) */}
+                      {desktopDnD && (
+                        <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm">
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeWidth={2} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+                          </svg>
+                        </span>
+                      )}
+                      {/* Reorder on touch: HTML5 DnD is unreliable on mobile */}
+                      <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1 md:hidden">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            moveFilteredItem(idx, -1)
+                          }}
+                          disabled={idx === 0 || savingOrder}
+                          title={t('admin.moveUp')}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-black/45 text-sm text-white backdrop-blur-sm disabled:opacity-35"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            moveFilteredItem(idx, 1)
+                          }}
+                          disabled={idx === filteredItems.length - 1 || savingOrder}
+                          title={t('admin.moveDown')}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-black/45 text-sm text-white backdrop-blur-sm disabled:opacity-35"
+                        >
+                          ↓
+                        </button>
+                      </div>
                     </div>
                     <div className="flex gap-1.5 p-2.5">
                       <button

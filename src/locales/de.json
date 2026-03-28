@@ -200,7 +200,10 @@
     "noItems": "Keine Fotos gefunden.",
     "deleteItem": "Löschen",
     "confirmDelete": "Dieses Foto löschen?",
-    "noImage": "Kein Bild"
+    "noImage": "Kein Bild",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "savingOrder": "Reihenfolge wird gespeichert…"
   },
   "slideshow": {
     "defaultButton": "Entdecken",

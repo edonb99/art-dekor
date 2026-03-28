@@ -51,7 +51,7 @@
     "showcaseLabel": "Interier premium",
     "storyLabel": "Historia jonë",
     "storyTitle": "Ndërtojmë hapësira me saktësi dhe karakter",
-    "storyText": "Art Dekor Furniture realizon interier me porosi: kuzhina, dollapë garderobe, mobilje për sallon dhe dhoma gjumi — me balanc të funksionit bashkëkohor dhe detajeve të punuara mirë.",
+    "storyText": "Art Dekor Furniture realizon interier me porosi: kuzhina, dollapë garderobe, mobilje për sallon dhe dhoma gjumi, funksion bashkëkohor dhe detaje të punuara mirë.",
     "collectionsLabel": "Çfarë prodhojmë",
     "collectionsTitle": "Koleksionet tona",
     "featuredLabel": "Portofoli",
@@ -116,8 +116,8 @@
     "value1Desc": "Çdo element matet dhe prodhohet sipas planit të hapësirës suaj.",
     "value2Title": "Materiale cilësore",
     "value2Desc": "Zgjedhim materiale të qëndrueshme dhe përfundime elegante për përdorim afatgjatë.",
-    "value3Title": "Saktësi zanatçe",
-    "value3Desc": "Ekipi ynë përziej aftësi teknike me ndjeshmëri për dizajn në çdo detaj.",
+    "value3Title": "Saktësi në dizajn",
+    "value3Desc": "Ekipi ynë kujdeset për bukuri në çdo detaj.",
     "ctaTitle": "Gati të bashkëpunojmë?",
     "ctaText": "Le të flasim për projektin tuaj dhe të përgatisim ofertë me porosi.",
     "ctaButton": "Na kontaktoni"
@@ -200,7 +200,10 @@
     "noItems": "Nuk u gjetën foto.",
     "deleteItem": "Fshi",
     "confirmDelete": "Të fshihet kjo foto?",
-    "noImage": "Pa imazh"
+    "noImage": "Pa imazh",
+    "moveUp": "Lart",
+    "moveDown": "Poshtë",
+    "savingOrder": "Duke ruajtur rendin…"
   },
   "slideshow": {
     "defaultButton": "Zbulo",

@@ -100,17 +100,20 @@ export default function HeroSlideshow({ slides }) {
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${i === safeIndex ? 'opacity-100' : 'opacity-0'}`}
           aria-hidden={i !== safeIndex}
         >
-          {/* Ken Burns wrapper — re-keyed to restart animation on each reveal */}
-          <div
-            className="h-full w-full"
-            style={i === safeIndex ? { animation: 'kenBurns 9s ease-out forwards' } : undefined}
-          >
-            <img
-              src={slide.image_url}
-              alt={slide.alt_text || t('slideshow.altFallback')}
-              className="h-full w-full object-cover"
-              loading={i === 0 ? 'eager' : 'lazy'}
-            />
+          {/* Mobile: full-bleed cover + Ken Burns. Desktop: letterboxed contain so the whole photo is visible. */}
+          <div className="absolute inset-0 bg-[#141210] md:flex md:items-center md:justify-center">
+            <div
+              className={`h-full w-full md:[animation:none] ${
+                i === safeIndex ? 'max-md:[animation:kenBurns_9s_ease-out_forwards]' : ''
+              }`}
+            >
+              <img
+                src={slide.image_url}
+                alt={slide.alt_text || t('slideshow.altFallback')}
+                className="h-full w-full object-cover md:h-auto md:max-h-[min(88vh,100%)] md:w-full md:max-w-[min(100%,1600px)] md:object-contain md:object-center"
+                loading={i === 0 ? 'eager' : 'lazy'}
+              />
+            </div>
           </div>
           {/* Two-layer gradient: dark top for UI, dark bottom for text */}
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(8,7,6,0.5)_0%,rgba(8,7,6,0.0)_35%,rgba(8,7,6,0.0)_55%,rgba(8,7,6,0.75)_100%)]" />
