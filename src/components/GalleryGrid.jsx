@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 export default function GalleryGrid({
@@ -31,6 +32,16 @@ export default function GalleryGrid({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [previewIndex, filteredItems.length])
+
+  // Lock scroll while lightbox open; portal renders outside transformed ancestors (e.g. Reveal)
+  useEffect(() => {
+    if (previewIndex === null) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [previewIndex])
 
   function onLbTouchStart(e) { touchStartX.current = e.changedTouches[0]?.clientX ?? null }
   function onLbTouchEnd(e) {
@@ -123,72 +134,78 @@ export default function GalleryGrid({
         </div>
       )}
 
-      {/* ── Lightbox ── */}
-      {lightbox && previewIndex !== null && (
-        <div
-          className="fixed inset-0 z-90 flex items-center justify-center bg-[#16120f]/82 backdrop-blur-sm"
-          onClick={() => setPreviewIndex(null)}
-          onTouchStart={onLbTouchStart}
-          onTouchEnd={onLbTouchEnd}
-        >
+      {/* ── Lightbox (portal: fixed must not sit under Reveal/transform ancestors) ── */}
+      {lightbox &&
+        previewIndex !== null &&
+        createPortal(
           <div
-            className="relative flex h-full w-full items-center justify-center p-4 sm:p-8"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-[#16120f]/88 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setPreviewIndex(null)}
+            onTouchStart={onLbTouchStart}
+            onTouchEnd={onLbTouchEnd}
           >
-            {/* Close */}
-            <button
-              type="button"
-              onClick={() => setPreviewIndex(null)}
-              className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95"
-              aria-label={t('common.close')}
+            <div
+              className="relative flex h-[100dvh] w-full max-w-[100vw] items-center justify-center overflow-hidden p-3 sm:p-8"
+              onClick={(e) => e.stopPropagation()}
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Prev */}
-            {filteredItems.length > 1 && (
+              {/* Close */}
               <button
                 type="button"
-                onClick={() => setPreviewIndex((i) => (i - 1 + filteredItems.length) % filteredItems.length)}
-                className="absolute left-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95 md:left-6"
+                onClick={() => setPreviewIndex(null)}
+                className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95 sm:right-5 sm:top-5"
+                aria-label={t('common.close')}
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            )}
 
-            {/* Image with fade-in animation */}
-            <img
-              key={previewIndex}
-              src={filteredItems[previewIndex]?.image_url}
-              alt={filteredItems[previewIndex]?.alt_text || ''}
-              className="max-h-[88vh] max-w-[88vw] rounded-2xl object-contain shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-              style={{ animation: 'scaleIn 0.28s ease-out' }}
-            />
+              {/* Prev */}
+              {filteredItems.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex((i) => (i - 1 + filteredItems.length) % filteredItems.length)}
+                  className="absolute left-2 z-20 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95 sm:left-5"
+                  aria-label={t('slideshow.prev')}
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
 
-            {/* Next */}
-            {filteredItems.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setPreviewIndex((i) => (i + 1) % filteredItems.length)}
-                className="absolute right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95 md:right-6"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            )}
+              {/* Image */}
+              <img
+                key={previewIndex}
+                src={filteredItems[previewIndex]?.image_url}
+                alt={filteredItems[previewIndex]?.alt_text || ''}
+                className="max-h-[min(92dvh,92vh)] max-w-[min(94vw,100%)] rounded-2xl object-contain shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+                style={{ animation: 'scaleIn 0.28s ease-out' }}
+              />
 
-            {/* Counter */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium tabular-nums tracking-[0.18em] text-white/75 backdrop-blur-sm">
-              {previewIndex + 1} / {filteredItems.length}
+              {/* Next */}
+              {filteredItems.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex((i) => (i + 1) % filteredItems.length)}
+                  className="absolute right-2 z-20 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95 sm:right-5"
+                  aria-label={t('slideshow.next')}
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+
+              <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium tabular-nums tracking-[0.18em] text-white/75 backdrop-blur-sm">
+                {previewIndex + 1} / {filteredItems.length}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   )
 }

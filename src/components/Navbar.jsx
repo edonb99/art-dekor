@@ -13,8 +13,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleSignOut() {
+    navigate('/', { replace: true })
     await signOut()
-    navigate('/')
   }
 
   const linkClass = ({ isActive }) =>

@@ -4,8 +4,8 @@ import albanianFlag from '../assets/Flag_of_Albania.svg.webp'
 import germanFlag from '../assets/Flag_of_Germany.svg.png'
 
 const LANGS = [
-  { code: 'en', flagSrc: britishFlag },
   { code: 'sq', flagSrc: albanianFlag },
+  { code: 'en', flagSrc: britishFlag },
   { code: 'de', flagSrc: germanFlag },
 ]
 
